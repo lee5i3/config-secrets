@@ -1,0 +1,19 @@
+{
+  "name": "config-secrets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "config": "^1.25.1",
+    "js-yaml": "^3.8.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/lee5i3/config-secrets.git"
+  }
+}
