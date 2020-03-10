@@ -1,12 +1,14 @@
 var config = require('config');
 var Path = require('path');
 var jetpack = require('fs-jetpack');
+var fs = require('fs');
 
 getSecrets = function() {
   var secretsPath = process.env.SECRET_PATH || '/run/secrets'
 
   var result = {};
-  var files = jetpack.list(secretsPath);
+  var all = jetpack.list(secretsPath);
+  var files = all.filter(file => !fs.statSync(`${secretsPath}/${file}`).isDirectory());
   if (files) {
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
