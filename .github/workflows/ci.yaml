@@ -1,0 +1,77 @@
+# Continuous Integration workflow.
+# Runs lint and tests on every PR and on pushes to master so broken code is
+# caught before it lands and before a release is drafted.
+name: CI
+
+on:
+  # Validate every pull request regardless of target branch.
+  pull_request:
+
+  # Re-run on master so the badge reflects the state of the released branch.
+  push:
+    branches:
+      - master
+
+# Default to read-only at the workflow level; the job below elevates as needed.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+
+    # Ubuntu is the default runner and the only one we need for this job, so no matrix.
+    runs-on: ubuntu-latest
+
+    steps:
+      # actions/checkout — https://github.com/actions/checkout
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      # actions/setup-node — https://github.com/actions/setup-node
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: '.node-version'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+  test:
+    name: Run unit tests
+
+    # Ubuntu is the default runner and the only one we need for this job, so no matrix.
+    runs-on: ubuntu-latest
+
+    # Test against all supported Node versions to catch version-specific issues.
+    strategy:
+      # Keep going so we see failures on every Node version, not just the first.
+      fail-fast: false
+      matrix:
+        # EOL schedule: https://nodejs.org/en/about/previous-releases
+        node-version: ['18.x', '20.x', '22.x', '24.x', '26.x']
+
+    steps:
+      # actions/checkout — https://github.com/actions/checkout
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      # actions/setup-node — https://github.com/actions/setup-node
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm run coverage` runs the test suite AND prints a coverage summary to
+      # the job log. The text-summary reporter shows up at the bottom of the
+      # GitHub Actions output so reviewers can spot coverage drift on a PR.
+      - name: Run tests with coverage
+        run: npm run coverage

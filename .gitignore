@@ -1,1 +1,26 @@
-node_modules
+### NodeJS ###
+node_modules/
+
+# Distribution / packaging
+dist/
+
+# Jest coverage output (`npm run coverage`)
+coverage/
+
+### VisualStudioCode ###
+# .vscode/*
+.history/
+.history
+.ionide
+
+### SonarQube ###
+.sonar/
+.sonarqube/
+.scannerwork/
+.sonarlint/
+
+## Junit
+junit/
+
+## Test results
+test-results/

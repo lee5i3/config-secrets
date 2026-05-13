@@ -1,7 +1,6 @@
 # Config Secrets
 
-[![Test](https://github.com/lee5i3/config-secrets/actions/workflows/test.yml/badge.svg)](https://github.com/lee5i3/config-secrets/actions/workflows/test.yml)
-[![Lint](https://github.com/lee5i3/config-secrets/actions/workflows/lint.yml/badge.svg)](https://github.com/lee5i3/config-secrets/actions/workflows/lint.yml)
+[![CI](https://github.com/lee5i3/config-secrets/actions/workflows/ci.yaml/badge.svg)](https://github.com/lee5i3/config-secrets/actions/workflows/ci.yaml)
 
 A plug-in for the [config](https://www.npmjs.com/package/config) module that adds support for Docker secrets alongside standard environment variables.
 
@@ -17,7 +16,7 @@ npm install config-secrets
 
 ## Usage
 
-Replace your `require('config')` call with `require('config-secrets')`. The returned object is the fully-configured `config` instance.
+Replace your `require('config')` call with `require('config-secrets')`. The returned object **is** the fully-configured `config` instance — every existing `config.get(...)` / `config.has(...)` keeps working, with secret files now resolved alongside env vars.
 
 ```js
 const config = require('config-secrets');
@@ -25,11 +24,7 @@ const config = require('config-secrets');
 console.log(config.get('db.password'));
 ```
 
-The helper functions are also exported for use in tests or custom tooling:
-
-```js
-const { getSecrets, parseSecretsAndEnv } = require('config-secrets');
-```
+Under the hood, importing `config-secrets` reads `SECRET_PATH` (default `/run/secrets`) and copies each file's contents into `process.env` before loading node-config. Existing env vars are never overwritten, so explicit env values always win over secret files.
 
 ## Configuration
 
@@ -39,6 +34,14 @@ Set this environment variable to change the directory where Docker secrets are r
 
 ```
 SECRET_PATH=/my/secrets/dir node app.js
+```
+
+### `SECRET_PATH_FOLLOW_SYMLINKS`
+
+By default `config-secrets` reads only **regular files** in `SECRET_PATH` — symlinks are skipped so a hostile symlink (e.g. one pointing at `/etc/passwd`) can't leak data from outside the secrets directory. Set this to `true` to opt in to following symlinks:
+
+```
+SECRET_PATH_FOLLOW_SYMLINKS=true node app.js
 ```
 
 ### `custom-environment-variables` file
@@ -56,16 +59,28 @@ default:
 
 With the above config, `config-secrets` will look for a file named `DB_PASSWORD` inside `SECRET_PATH` and use its contents as `db.password`. If the `DB_PASSWORD` environment variable is also set, it takes precedence.
 
-## Notes
+## TypeScript
 
-- Environment variables take precedence over Docker secrets.
-- If `SECRET_PATH` does not exist or is empty, secrets resolution is skipped gracefully.
+TypeScript declarations ship with the package ([lib/index.d.ts](lib/index.d.ts)). Install `@types/config` alongside this package and the import is fully typed — `getSecrets()` and `parseSecretsAndEnv()` augment the standard node-config surface.
 
-## v1.1.0 changes
+```ts
+import config from 'config-secrets';
+const password: string = config.get('db.password');
+```
 
-- Fixed global scope leaks: `getSecrets` and `parseSecretsAndEnv` were accidentally assigned to the global scope (missing `const`). Both are now properly scoped.
-- Fixed incorrect `this` reference inside a `forEach` callback in `parseSecretsAndEnv` (was `this.getSecrets()`, now `getSecrets()`).
-- Removed duplicate `var` declaration for `environmentSubstitutions`.
-- Rewrote `index.js` using `'use strict'`, `const`/`let` throughout.
-- Added named exports `getSecrets` and `parseSecretsAndEnv` so they can be unit-tested independently.
-- Added Jest tests, ESLint configuration, and GitHub Actions workflows for CI.
+## Compatibility
+
+### Node.js
+
+Requires **Node.js 18 or newer**. Node 17 and earlier are not supported.
+
+### `config`
+
+Tested against every `config` major from **v1 through v4**. The library ships a small `util.is*` polyfill ([lib/util-shim.js](lib/util-shim.js)) so `config@1` and `config@2` keep working on Node 23+ — where Node removed the legacy `util.isRegExp` / `util.isDate` / `util.isArray` helpers those older versions still call directly. The shim is loaded automatically before `require('config')`; no consumer action required.
+
+| `config` version | Status |
+|------------------|--------|
+| `^1`             | ✓ supported (via built-in polyfill) |
+| `^2`             | ✓ supported (via built-in polyfill) |
+| `^3`             | ✓ supported |
+| `^4`             | ✓ supported |

@@ -1,0 +1,66 @@
+# Publish to npm.
+# Fires when a GitHub Release is published. Release Drafter keeps a rolling
+# draft populated from merged PRs (see draft-release.yaml); promoting that
+# draft to a real release triggers this workflow.
+#
+# Required secret: NPM_TOKEN — an Automation token from npmjs.com. Create one
+# at https://www.npmjs.com/settings/<user>/tokens (type: Automation, scope:
+# this package). Add it under Settings → Secrets and variables → Actions.
+#
+# Future option: replace NPM_TOKEN with a trusted publisher binding (OIDC) —
+# https://docs.npmjs.com/trusted-publishers — and drop the secret entirely.
+name: Publish to npm
+
+on:
+  release:
+    # `published` covers both "Publish release" and "Auto-publish on tag";
+    # `created` would also fire for drafts, which we don't want.
+    types: [published]
+
+# id-token: write is required for the npm provenance attestation below.
+# contents: read is the minimum to check out the tag.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish package to npm
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout — https://github.com/actions/checkout
+      # Checks out the exact tag that fired the release event.
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      # actions/setup-node — https://github.com/actions/setup-node
+      # `registry-url` is what makes setup-node write the auth line into ~/.npmrc;
+      # without it, npm publish can't see NODE_AUTH_TOKEN.
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: '.node-version'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Sanity check: the GitHub Release tag (e.g. v1.2.3) must match the
+      # version in package.json. Stops us shipping a tarball whose version
+      # disagrees with the tag — a class of bug that's painful to unwind on npm.
+      - name: Verify tag matches package.json version
+        run: |
+          pkg_version="$(node -p 'require("./package.json").version')"
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$pkg_version" != "$tag_version" ]; then
+            echo "::error::Release tag '$tag_version' does not match package.json version '$pkg_version'"
+            exit 1
+          fi
+
+      # `--provenance` emits a signed SLSA attestation tying the tarball to
+      # this workflow run — visible on the npm page as a "Provenance" badge.
+      # `--access public` is a no-op for unscoped packages but is required if
+      # the package is ever scoped (@owner/name) and kept here so the move is safe.
+      - name: Publish to npm
+        run: npm publish --provenance --access public

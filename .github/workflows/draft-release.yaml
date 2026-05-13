@@ -1,0 +1,40 @@
+# Release Drafter workflow.
+# Maintains a rolling GitHub Release draft populated from merged PR titles and
+# labels per the rules in .github/release-drafter.yaml. The draft is updated as
+# PRs are opened, edited, and merged so cutting a release is one button click.
+name: Release Drafter
+
+on:
+  # Refresh the draft whenever something lands on master.
+  push:
+    branches:
+      - master
+
+  # Also refresh while a PR is in flight so labels/titles update the draft live.
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+# Default to read-only at the workflow level; the job below elevates as needed.
+permissions:
+  contents: read
+
+jobs:
+  draft:
+    name: Update release draft
+
+    # Ubuntu is the default runner and the only one we need for this job, so no matrix.
+    runs-on: ubuntu-latest
+
+    # Job-scoped elevation: write release notes and react on PRs, nothing else.
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      # release-drafter/release-drafter — https://github.com/release-drafter/release-drafter
+      - name: Update release draft
+        uses: release-drafter/release-drafter@6a93d829887aa2e0748befe2e808c66c0ec6e4c7 # v6.4.0
+        with:
+          config-name: release-drafter.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
