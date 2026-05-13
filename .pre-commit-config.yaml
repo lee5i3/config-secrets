@@ -19,7 +19,7 @@ repos:
         args:
           - "--autofix"
           - "--indent=2"
-          - "--no-sort-keys"      
+          - "--no-sort-keys"
       - id: trailing-whitespace
 
   - repo: local
