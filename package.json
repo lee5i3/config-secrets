@@ -1,10 +1,11 @@
 {
   "name": "config-secrets",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "lint": "eslint ."
   },
   "author": "",
   "license": "ISC",
@@ -12,6 +13,10 @@
     "config": "^1.25.1",
     "fs-jetpack": "^0.13.3",
     "js-yaml": "^3.8.3"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
   },
   "repository": {
     "type": "git",

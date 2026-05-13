@@ -1,0 +1,15 @@
+{
+  "env": {
+    "node": true,
+    "es2020": true,
+    "jest": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020
+  },
+  "rules": {
+    "no-var": "error",
+    "no-undef": "error",
+    "prefer-const": "warn"
+  }
+}
