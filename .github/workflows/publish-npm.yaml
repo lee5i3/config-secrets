@@ -3,12 +3,9 @@
 # draft populated from merged PRs (see draft-release.yaml); promoting that
 # draft to a real release triggers this workflow.
 #
-# Required secret: NPM_TOKEN — an Automation token from npmjs.com. Create one
-# at https://www.npmjs.com/settings/<user>/tokens (type: Automation, scope:
-# this package). Add it under Settings → Secrets and variables → Actions.
-#
-# Future option: replace NPM_TOKEN with a trusted publisher binding (OIDC) —
-# https://docs.npmjs.com/trusted-publishers — and drop the secret entirely.
+# Can also be triggered manually via workflow_dispatch to publish a prerelease
+# (e.g. alpha, beta, rc). The published version is {package.json version}-{preid}
+# under a matching npm dist-tag so it does not land on `latest`.
 name: Publish to npm
 
 on:
@@ -16,6 +13,13 @@ on:
     # `published` covers both "Publish release" and "Auto-publish on tag";
     # `created` would also fire for drafts, which we don't want.
     types: [published]
+
+  workflow_dispatch:
+    inputs:
+      preid:
+        description: 'Prerelease identifier (e.g. alpha, beta, rc). Published as {version}-{preid} under a dist-tag of the same name.'
+        required: true
+        type: string
 
 # id-token: write is required for the npm provenance attestation below.
 # contents: read is the minimum to check out the tag.
@@ -29,7 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # actions/checkout — https://github.com/actions/checkout
-      # Checks out the exact tag that fired the release event.
+      # On release: checks out the exact tag that fired the release event.
+      # On dispatch: checks out the selected branch (defaults to master).
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
@@ -49,7 +54,9 @@ jobs:
       # Sanity check: the GitHub Release tag (e.g. v1.2.3) must match the
       # version in package.json. Stops us shipping a tarball whose version
       # disagrees with the tag — a class of bug that's painful to unwind on npm.
+      # Skipped for prerelease dispatches because there is no release tag.
       - name: Verify tag matches package.json version
+        if: github.event_name == 'release'
         run: |
           pkg_version="$(node -p 'require("./package.json").version')"
           tag_version="${GITHUB_REF_NAME#v}"
@@ -58,9 +65,25 @@ jobs:
             exit 1
           fi
 
+      # Temporarily set the prerelease version in package.json without committing.
+      # The resulting dist-tag (--tag) prevents this from becoming `latest`.
+      - name: Apply prerelease version
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          pkg_version="$(node -p 'require("./package.json").version')"
+          npm version "${pkg_version}-${{ inputs.preid }}" --no-git-tag-version
+
       # `--provenance` emits a signed SLSA attestation tying the tarball to
       # this workflow run — visible on the npm page as a "Provenance" badge.
       # `--access public` is a no-op for unscoped packages but is required if
       # the package is ever scoped (@owner/name) and kept here so the move is safe.
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            dist_tag="${{ inputs.preid }}"
+            npm publish --provenance --access public --tag "${dist_tag%%.*}"
+          else
+            npm publish --provenance --access public
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,7 +1,9 @@
 # Release Drafter workflow.
 # Maintains a rolling GitHub Release draft populated from merged PR titles and
-# labels per the rules in .github/release-drafter.yaml. The draft is updated as
-# PRs are opened, edited, and merged so cutting a release is one button click.
+# labels per the rules in .github/release-drafter.yaml. The draft version is
+# taken directly from package.json rather than inferred from PR labels. The
+# draft is updated as PRs are opened, edited, and merged so cutting a release
+# is one button click.
 name: Release Drafter
 
 on:
@@ -10,7 +12,7 @@ on:
     branches:
       - master
 
-  # Also refresh while a PR is in flight so labels/titles update the draft live.
+  # Also refresh while a PR is in flight so the draft reflects the incoming version.
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -22,7 +24,6 @@ jobs:
   draft:
     name: Update release draft
 
-    # Ubuntu is the default runner and the only one we need for this job, so no matrix.
     runs-on: ubuntu-latest
 
     # Job-scoped elevation: write release notes and react on PRs, nothing else.
@@ -31,10 +32,22 @@ jobs:
       pull-requests: write
 
     steps:
+      # actions/checkout — https://github.com/actions/checkout
+      # Needed to read package.json for the explicit version passed below.
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Read package version
+        id: pkg
+        run: echo "version=$(jq -r '.version' package.json)" >> "$GITHUB_OUTPUT"
+
       # release-drafter/release-drafter — https://github.com/release-drafter/release-drafter
+      # Passing `version` explicitly bypasses label-based version resolution and
+      # uses the value from package.json instead.
       - name: Update release draft
         uses: release-drafter/release-drafter@6a93d829887aa2e0748befe2e808c66c0ec6e4c7 # v6.4.0
         with:
           config-name: release-drafter.yaml
+          version: ${{ steps.pkg.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

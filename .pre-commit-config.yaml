@@ -12,7 +12,6 @@ repos:
       - id: check-yaml
       - id: detect-aws-credentials
       - id: detect-private-key
-      - id: end-of-file-fixer
       - id: fix-byte-order-marker
       - id: mixed-line-ending
       - id: pretty-format-json
@@ -20,7 +19,6 @@ repos:
           - "--autofix"
           - "--indent=2"
           - "--no-sort-keys"
-      - id: trailing-whitespace
 
   - repo: local
     hooks:

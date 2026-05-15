@@ -2,7 +2,7 @@
   "author": "Lee Hull",
   "license": "ISC",
   "name": "config-secrets",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "node-config plugin that resolves Docker/Kubernetes secret files alongside environment variables for custom-environment-variables.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -12,6 +12,7 @@
     "coverage": "jest --reporters=default --verbose --coverage --coverageReporters=text --coverageReporters=text-summary",
     "lint": "eslint .",
     "prepare": "husky",
+    "check-commit": "pre-commit run --all-files",
     "test": "jest --reporters=default --verbose",
     "upgrade": "npx --yes npm-check-updates -u"
   },
