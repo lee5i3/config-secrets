@@ -1,0 +1,9 @@
+{
+  "db": {
+    "password": "DB_PASSWORD"
+  },
+  "api": {
+    "key": "API_KEY"
+  },
+  "flag": "FLAG_VALUE"
+}

@@ -1,20 +1,58 @@
 {
-  "name": "config-secrets",
-  "version": "1.0.6",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
+  "author": "Lee Hull",
   "license": "ISC",
+  "name": "config-secrets",
+  "version": "1.1.0",
+  "description": "node-config plugin that resolves Docker/Kubernetes secret files alongside environment variables for custom-environment-variables.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix",
+    "coverage": "jest --reporters=default --verbose --coverage --coverageReporters=text --coverageReporters=text-summary",
+    "lint": "eslint .",
+    "prepare": "husky",
+    "check-commit": "pre-commit run --all-files",
+    "test": "jest --reporters=default --verbose",
+    "upgrade": "npx --yes npm-check-updates -u"
+  },
   "dependencies": {
-    "config": "^1.25.1",
-    "fs-jetpack": "^0.13.3",
-    "js-yaml": "^3.8.3"
+    "config": "^4.4.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "config-v1": "npm:config@^1.31.0",
+    "config-v2": "npm:config@^2.0.2",
+    "config-v3": "npm:config@^3.3.12",
+    "config-v4": "npm:config@^4.4.1",
+    "eslint": "^10.3.0",
+    "globals": "^17.6.0",
+    "husky": "^9.1.7",
+    "jest": "^30.4.2"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "lib/"
+  ],
+  "keywords": [
+    "config",
+    "configuration",
+    "docker",
+    "environment-variables",
+    "kubernetes",
+    "node-config",
+    "secrets"
+  ],
+  "engines": {
+    "node": ">=18"
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/lee5i3/config-secrets.git"
-  }
+    "url": "git+https://github.com/lee5i3/config-secrets.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lee5i3/config-secrets/issues"
+  },
+  "homepage": "https://github.com/lee5i3/config-secrets#readme"
 }

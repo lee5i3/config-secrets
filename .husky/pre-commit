@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+# Pre-commit hook to run pre-commit checks on all files before committing
+if ! command -v pre-commit >/dev/null 2>&1; then
+  echo "✗ pre-commit not installed — see https://pre-commit.com/#install (e.g. 'pip install pre-commit' or 'brew install pre-commit')" >&2
+  exit 1
+fi
+
+# Run pre-commit on all files to ensure consistent formatting and linting before committing
+exec pre-commit run --all-files

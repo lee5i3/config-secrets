@@ -1,0 +1,10 @@
+{
+  "db": {
+    "host": "localhost",
+    "password": "default-password"
+  },
+  "api": {
+    "key": "default-api-key"
+  },
+  "flag": "default-flag"
+}

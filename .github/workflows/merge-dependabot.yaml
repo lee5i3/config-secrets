@@ -1,0 +1,46 @@
+# Dependabot auto-merge workflow.
+# Enables auto-merge on Dependabot PRs that are patch- or minor-level bumps.
+# Major bumps and non-Dependabot PRs are left for human review.
+name: Dependabot auto-merge
+
+# PR-scoped trigger; the actor check below keeps this from running on human PRs.
+on: pull_request
+
+# Minimum perms needed to enable auto-merge: write the merge state and the PR.
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  merge:
+    name: Auto-merge Dependabot updates
+
+    # Ubuntu is the default runner and the only one we need for this job, so no matrix.
+    runs-on: ubuntu-latest
+
+    # Guard: only run when Dependabot itself opened the PR. Forks/humans are skipped.
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      # https://github.com/int128/wait-for-workflows-action
+      - name: Wait for workflows to finish
+        uses: int128/wait-for-workflows-action@8c55b880738d84f28c4382fffe165895a01fed0e # v1.53.0
+        timeout-minutes: 10
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # dependabot/fetch-metadata — https://github.com/dependabot/fetch-metadata
+      - name: Fetch dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Only auto-merge patch/minor updates — semver-major bumps still need human review.
+      - name: Enable auto-merge for patch & minor updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
