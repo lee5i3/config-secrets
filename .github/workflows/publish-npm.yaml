@@ -34,7 +34,7 @@ jobs:
     steps:
       # actions/checkout — https://github.com/actions/checkout
       # On release: checks out the exact tag that fired the release event.
-      # On dispatch: checks out the selected branch (defaults to master).
+      # On dispatch: checks out the selected branch (defaults to the default branch).
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 

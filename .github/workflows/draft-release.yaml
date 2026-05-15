@@ -7,10 +7,10 @@
 name: Release Drafter
 
 on:
-  # Refresh the draft whenever something lands on master.
+  # Refresh the draft whenever something lands on the default branch.
   push:
     branches:
-      - master
+      - $default-branch
 
   # Also refresh while a PR is in flight so the draft reflects the incoming version.
   pull_request:
