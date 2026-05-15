@@ -21,6 +21,17 @@ categories:
       - 'docs'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
+version-resolver:
+  major:
+    labels:
+      - 'bump:major'
+  minor:
+    labels:
+      - 'bump:minor'
+  patch:
+    labels:
+      - 'bump:patch'
+  default: patch
 autolabeler:
   - label: 'documentation'
     files:

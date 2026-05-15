@@ -1,6 +1,6 @@
 # Continuous Integration workflow.
-# Runs lint, tests, and version-bump check on every PR and on pushes to the
-# default branch so broken code is caught before it lands and before a release is drafted.
+# Runs lint and tests on every PR and on pushes to the default branch so
+# broken code is caught before it lands and before a release is drafted.
 name: CI
 
 on:
@@ -10,59 +10,13 @@ on:
   # Re-run on the default branch so the badge reflects the state of the released branch.
   push:
     branches:
-      - $default-branch
+      - main
 
 # Default to read-only at the workflow level; the job below elevates as needed.
 permissions:
   contents: read
 
 jobs:
-  check-version:
-    name: Verify package.json version was bumped
-
-    # Ubuntu is the default runner and the only one we need for this job, so no matrix.
-    runs-on: ubuntu-latest
-
-    # Only run this job for PRs since we want to enforce version bumps on the way in, but not on the default branch where the version is already bumped.
-    if: github.event_name == 'pull_request'
-
-    steps:
-      # actions/checkout — https://github.com/actions/checkout
-      - name: Check out PR branch
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - name: Fetch default branch for comparison
-        run: git fetch origin "$DEFAULT_BRANCH" --depth=1
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-
-      - name: Verify version was bumped
-        run: |
-          base=$(git show "origin/${DEFAULT_BRANCH}:package.json" | jq -r '.version')
-          pr=$(jq -r '.version' package.json)
-
-          echo "${DEFAULT_BRANCH} : ${base}"
-          echo "PR                : ${pr}"
-
-          if [ "$pr" = "$base" ]; then
-            echo "::error::package.json version (${pr}) was not bumped. Increment the version before merging."
-            exit 1
-          fi
-
-          IFS='.' read -r b1 b2 b3 <<< "$base"
-          IFS='.' read -r p1 p2 p3 <<< "$pr"
-
-          if [ "$p1" -lt "$b1" ] || \
-             ( [ "$p1" -eq "$b1" ] && [ "$p2" -lt "$b2" ] ) || \
-             ( [ "$p1" -eq "$b1" ] && [ "$p2" -eq "$b2" ] && [ "$p3" -lt "$b3" ] ); then
-            echo "::error::PR version (${pr}) is lower than ${DEFAULT_BRANCH} version (${base}). Version must be incremented, not decremented."
-            exit 1
-          fi
-
-          echo "Version bump verified: ${base} → ${pr}"
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-
   lint:
     name: Lint
 
