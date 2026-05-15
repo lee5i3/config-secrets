@@ -3,9 +3,17 @@
 # draft populated from merged PRs (see draft-release.yaml); promoting that
 # draft to a real release triggers this workflow.
 #
+# On release: sets package.json to the release tag version, publishes to npm,
+# then commits the version bump back to the default branch.
+#
 # Can also be triggered manually via workflow_dispatch to publish a prerelease
 # (e.g. alpha, beta, rc). The published version is {package.json version}-{preid}
-# under a matching npm dist-tag so it does not land on `latest`.
+# under a matching npm dist-tag so it does not land on `latest`. No commit is
+# made for prereleases.
+#
+# Required secret: NPM_TOKEN — an Automation token from npmjs.com. Create one
+# at https://www.npmjs.com/settings/<user>/tokens (type: Automation, scope:
+# this package). Add it under Settings → Secrets and variables → Actions.
 name: Publish to npm
 
 on:
@@ -17,14 +25,14 @@ on:
   workflow_dispatch:
     inputs:
       preid:
-        description: 'Prerelease identifier (e.g. alpha, beta, rc). Published as {version}-{preid} under a dist-tag of the same name.'
+        description: 'Prerelease identifier, optionally with iteration (e.g. beta, rc.1, alpha.2). Published as {version}-{preid} under a dist-tag of the base name.'
         required: true
         type: string
 
 # id-token: write is required for the npm provenance attestation below.
-# contents: read is the minimum to check out the tag.
+# contents: write is required to commit the version bump back on release.
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -33,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # actions/checkout — https://github.com/actions/checkout
-      # On release: checks out the exact tag that fired the release event.
+      # On release: checks out the tag commit.
       # On dispatch: checks out the selected branch (defaults to the default branch).
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -48,30 +56,22 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-
-      # Sanity check: the GitHub Release tag (e.g. v1.2.3) must match the
-      # version in package.json. Stops us shipping a tarball whose version
-      # disagrees with the tag — a class of bug that's painful to unwind on npm.
-      # Skipped for prerelease dispatches because there is no release tag.
-      - name: Verify tag matches package.json version
+      # Set package.json version to match the release tag so what gets published
+      # is authoritative from the tag, not whatever happened to be in the file.
+      - name: Set release version from tag
         if: github.event_name == 'release'
-        run: |
-          pkg_version="$(node -p 'require("./package.json").version')"
-          tag_version="${GITHUB_REF_NAME#v}"
-          if [ "$pkg_version" != "$tag_version" ]; then
-            echo "::error::Release tag '$tag_version' does not match package.json version '$pkg_version'"
-            exit 1
-          fi
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
 
       # Temporarily set the prerelease version in package.json without committing.
-      # The resulting dist-tag (--tag) prevents this from becoming `latest`.
+      # The dist-tag (--tag) prevents this from becoming `latest`.
       - name: Apply prerelease version
         if: github.event_name == 'workflow_dispatch'
         run: |
           pkg_version="$(node -p 'require("./package.json").version')"
           npm version "${pkg_version}-${{ inputs.preid }}" --no-git-tag-version
+
+      - name: Install dependencies
+        run: npm ci
 
       # `--provenance` emits a signed SLSA attestation tying the tarball to
       # this workflow run — visible on the npm page as a "Provenance" badge.
@@ -87,3 +87,22 @@ jobs:
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Commit the version bump to the default branch so package.json stays in
+      # sync with what was published. Runs after a successful publish so a failed
+      # publish does not leave a stray version commit in the repo.
+      # Note: if branch protection requires PRs for the default branch, grant
+      # GITHUB_TOKEN a bypass in Settings → Branches, or swap in a PAT.
+      - name: Commit release version to default branch
+        if: github.event_name == 'release'
+        run: |
+          git fetch origin "$DEFAULT_BRANCH" --depth=1
+          git checkout "$DEFAULT_BRANCH"
+          npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: release ${GITHUB_REF_NAME}"
+          git push origin "$DEFAULT_BRANCH"
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}

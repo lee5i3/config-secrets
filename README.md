@@ -70,15 +70,19 @@ const password: string = config.get('db.password');
 
 ## Versioning
 
-This project follows [Semantic Versioning](https://semver.org/):
+This project follows [Semantic Versioning](https://semver.org/). Apply one of the following labels to your PR to signal the intended bump — the release draft version updates automatically:
 
-| Bump | When to use |
-|------|-------------|
-| **patch** | Small, self-contained updates — bug fixes, documentation, dependency upgrades |
-| **minor** | New features or behaviour that are backwards compatible |
-| **major** | Breaking changes — removed or renamed exports, changed defaults, dropped Node/config version support |
+| Label | Bump | When to use |
+|-------|------|-------------|
+| `bump:patch` | patch | Bug fixes, documentation, dependency upgrades |
+| `bump:minor` | minor | New features or behaviour that are backwards compatible |
+| `bump:major` | major | Breaking changes — removed or renamed exports, changed defaults, dropped Node/config version support |
 
-Version must be incremented in `package.json` as part of the PR; CI will reject a merge if the version is unchanged.
+When a release is published, `package.json` is automatically updated to match the release tag and committed back to the default branch.
+
+### Prereleases
+
+Prereleases can be published without cutting a full release via the [Publish to npm](../../actions/workflows/publish-npm.yaml) workflow dispatch. Provide a `preid` such as `beta`, `rc.1`, or `alpha.2` — the package is published as `{version}-{preid}` under a matching npm dist-tag (e.g. `beta`) so it does not land on `latest`.
 
 ## Compatibility
 
