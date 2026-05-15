@@ -68,6 +68,18 @@ import config from 'config-secrets';
 const password: string = config.get('db.password');
 ```
 
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/):
+
+| Bump | When to use |
+|------|-------------|
+| **patch** | Small, self-contained updates — bug fixes, documentation, dependency upgrades |
+| **minor** | New features or behaviour that are backwards compatible |
+| **major** | Breaking changes — removed or renamed exports, changed defaults, dropped Node/config version support |
+
+Version must be incremented in `package.json` as part of the PR; CI will reject a merge if the version is unchanged.
+
 ## Compatibility
 
 ### Node.js

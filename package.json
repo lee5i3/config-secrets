@@ -2,7 +2,7 @@
   "author": "Lee Hull",
   "license": "ISC",
   "name": "config-secrets",
-  "version": "2.0.0",
+  "version": "1.1.0",
   "description": "node-config plugin that resolves Docker/Kubernetes secret files alongside environment variables for custom-environment-variables.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
