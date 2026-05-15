@@ -12,10 +12,6 @@ on:
     branches:
       - $default-branch
 
-  # Also refresh while a PR is in flight so the draft reflects the incoming version.
-  pull_request:
-    types: [opened, reopened, synchronize]
-
 # Default to read-only at the workflow level; the job below elevates as needed.
 permissions:
   contents: read
