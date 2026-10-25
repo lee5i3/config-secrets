@@ -25,7 +25,7 @@ jobs:
     steps:
       # https://github.com/int128/wait-for-workflows-action
       - name: Wait for workflows to finish
-        uses: int128/wait-for-workflows-action@57bb04f64e2887e8deaba210fae6790c3b9e9554 # v1.107.0
+        uses: int128/wait-for-workflows-action@b320164b37276db89a12829914d6eb6ef4973d2b # v1.108.0
         timeout-minutes: 10
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
